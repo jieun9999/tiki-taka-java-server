@@ -27,7 +27,7 @@ public class Server {
 
         //장점
         //1. 사용자 식별 :  userId를 통해 연결된 각 클라이언트를 구별
-        //2. 유연한 메세지 처리 : userId를 사용하여 특정 사용자에게 메시지를 보내거나, 브로드캐스트하기에 종흠
+        //2. 유연한 메세지 처리 : userId를 사용하여 특정 사용자에게 메시지를 보내거나, 브로드캐스트하기에 좋음
         try {
             while (!serverSocket.isClosed()){
                 Socket socket = serverSocket.accept();

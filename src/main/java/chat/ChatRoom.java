@@ -16,6 +16,9 @@ public class ChatRoom {
 
        }
 
+       public synchronized void removeChatHandler(ChatHandler chatHandler){
+           chatHandlers.remove(chatHandler);
+       }
 
         public synchronized void broadcastMessage(String message, ChatHandler sender) throws IOException {
         for (ChatHandler chatHandler : chatHandlers){

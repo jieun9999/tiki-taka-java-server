@@ -34,28 +34,36 @@ public class ChatHandler implements Runnable {
 
     }
 
+    //thread.start();될때 실행된다
     @Override
     public void run() {
 
-        while (socket.isConnected()){
             try {
-                //해당 클라이언트를 채팅방의 참여자 목록에 추가
+                //해당 클라이언트를 채팅방의 참여자 목록에 한번만 추가
                 chatRoom.addChatHandler(this);
+
                 // 클라이언트로부터 메시지를 지속적으로 수신하고 처리하는 로직
                 String messageFromClient;
                 while ((messageFromClient = bufferedReader.readLine())!= null){
-
+                    // bufferedReader.readLine()은 입력 스트림으로부터 한줄의 텍스트를 읽어올때까지 블로킹(대기) 상태에 있습니다
+                    // 클라이언트로부터 새로운 줄 바꿈 문자(예: \n 또는 \r\n)를 포함하는 문자열이 도착할 때까지 대기합니다
+                    // 만약 클라이언트가 연결을 종료하거나 네트워크 문제 등으로 인해 연결이 끊어지면, readLine() 메서드는 null을 반환
                     handleClientMessage(messageFromClient);
                 }
+                //반복문을 빠져나왔다면, 소켓이 종료되었음을 의미
+                System.out.println("사용자[" + userId + "]가 클라이언트 측 소켓을 종료했습니다.");
+
+                // 참여자 중에 나간 사용자를 삭제한다
+                chatRoom.removeChatHandler(this);
+                //서버 소켓 연결도 종료
+                closeConnection();
+                System.out.println("사용자[" + userId + "]와 연결된 서버 측 소켓도 종료했습니다.");
 
             } catch (IOException e) {
-                try {
-                    closeConnection(socket, bufferedReader, bufferedWriter);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
+                System.out.println("클라이언트 [" + userId + "]와의 연결에 문제가 발생했습니다.");
+
             }
-        }
+
     }
 
     private void handleClientMessage(String data){
@@ -150,17 +158,11 @@ public class ChatHandler implements Runnable {
         }
     }
 
-    //연결 종료 및 리소스 해제
-    public void closeConnection(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) throws IOException {
+    //서버 소켓 연결 종료 및 리소스 해제
+    public void closeConnection() throws IOException {
         try{
             if(socket != null){
                 socket.close();
-            }
-            if (bufferedReader!= null){
-                bufferedReader.close();
-            }
-            if (bufferedWriter != null){
-                bufferedWriter.close();
             }
         }catch (IOException e){
             e.printStackTrace();
