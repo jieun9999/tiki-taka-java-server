@@ -5,13 +5,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
 
-public class DatabaseConnection {
+public class DatabaseUtil {
 
     public static Connection getConnection() throws Exception {
         Properties prop = new Properties();
 
         // 프로퍼티 파일 로드
-        try (InputStream input = DatabaseConnection.class.getClassLoader().getResourceAsStream("database.properties")) {
+        try (InputStream input = DatabaseUtil.class.getClassLoader().getResourceAsStream("database.properties")) {
             prop.load(input);
         }
 
@@ -21,6 +21,7 @@ public class DatabaseConnection {
         String dbPassword = prop.getProperty("db.password");
 
         // 데이터베이스 연결
-        return DriverManager.getConnection(dbURL, dbUser, dbPassword);
+        Connection conn = DriverManager.getConnection(dbURL, dbUser, dbPassword);
+        return conn;
     }
 }

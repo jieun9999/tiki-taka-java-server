@@ -43,3 +43,6 @@ bin/
 
 ## db 연결 설정 ##
 database.properties
+
+## fcm 서버키#
+tiki-taka-22f76-firebase-adminsdk-umsvj-e1428d776e.json
