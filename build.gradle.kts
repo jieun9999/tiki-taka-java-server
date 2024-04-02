@@ -19,6 +19,7 @@ dependencies {
     implementation ("com.google.firebase:firebase-admin:9.2.0")
     implementation ("com.squareup.okhttp3:okhttp:4.10.0")
     // Firebase 서버로 푸시 메시지 전송 시 필요
+    implementation("ch.qos.logback:logback-classic:1.5.3")
 }
 
 tasks.test {

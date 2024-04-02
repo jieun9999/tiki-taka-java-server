@@ -2,7 +2,6 @@ package chat;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import firebase.FirebaseCloudMessageService;
 
 import java.io.*;
 import java.net.Socket;
@@ -70,25 +69,39 @@ public class ChatHandler implements Runnable {
 
     }
 
-    private void handleSendingMessage(String messageContent){
+    private void handleSendingMessage(String data){
         try {
-
-            // db 저장 후, 다른 사용자에게 브로드 캐스팅 OR FCM 전송
-            String savedMessage = afterParsingSaveData(messageContent);
+            JsonObject messageObject = JsonParser.parseString(data).getAsJsonObject();
+            String type = messageObject.get("type").getAsString();
+            System.out.println("클라이언트에서 받은 data" +data);
+            String savedMessage = processDataBasedOnType(data);
             System.out.println("savedMessage" + savedMessage);
 
-            // 채팅방에 참여자가 2명일 때에는 모두 온라인 상태이므로 브로드 캐스팅,
-            // 1명만 있을 경우에는 나머지 한명은 오프라인 상태이므로 FCM 전송
-            if(chatRoom.getChatHandlersSize() == 2){
-                broadcastMessage(savedMessage);
+            // 메세지 type 2 : newMessage, readMessages
+            // 채팅방에 참여자가 2명일 때에는 브로드캐스트, 1명만 있을 경우에는 FCM 전송
+            int onlineUsers = chatRoom.getChatHandlersSize();
 
-            }else if(chatRoom.getChatHandlersSize() == 1) {
-                System.out.println("메세지를 FCM 서버로 전달하는 로직을 추가");
-                // 나간 사용자의 fcmToken을 가져옴
-                String fcmToken = service.selectFcmToken(userId);
-//                // 메세지를 FCM 서버로 전달하는 로직을 추가
-//                FirebaseCloudMessageService.sendMessage(fcmToken, savedMessage);
+            if(type.equals("newMessage")){
+                if(onlineUsers == 2){
+                    broadcastMessage(savedMessage);
+
+                } else if (onlineUsers == 1) {
+                    System.out.println("메세지를 FCM 서버로 전달하는 로직을 추가");
+//                    나간 사용자의 fcmToken을 가져옴
+//                    String fcmToken = service.selectFcmToken(userId);
+//                    메세지를 FCM 서버로 전달하는 로직을 추가
+//                    FirebaseCloudMessageService.sendMessage(fcmToken, savedMessage);
+                }
+
+            }else if(type.equals("readMessages")) {
+                if(onlineUsers == 2){
+                    broadcastMessage(savedMessage);
+
+                } else if (onlineUsers == 1) {
+                    // db 업데이트만 하면된다
+                }
             }
+
 
         }catch (Exception e){
             e.printStackTrace();
@@ -96,29 +109,36 @@ public class ChatHandler implements Runnable {
 
     }
 
-    private String afterParsingSaveData(String data) throws SQLException {
+    private String processDataBasedOnType(String data) throws SQLException {
         JsonObject messageObject = JsonParser.parseString(data).getAsJsonObject();
-
         String type = messageObject.get("type").getAsString();
+
         String savedMessage = null;
-
         if(type.equals("newMessage")){
-            int senderId = messageObject.get("senderId").getAsInt();
-            String message = messageObject.get("message").getAsString();
-            int chatRoomId = messageObject.get("chatRoomId").getAsInt();
+            savedMessage = processAndSaveNewMessage(messageObject);
 
-            savedMessage = service.saveMessageToDbAndReturn(senderId, message, chatRoomId, 0);
-            // 읽지 않은 상태로 db 업데이트 함, 그리고 클라이언트에 전송
-
-        }else if(type.equals("readMessage")){
-            int readerId = messageObject.get("readerId").getAsInt();
-            int lastReadMessageId = messageObject.get("lastReadMessageId").getAsInt();
-            savedMessage = service.updateMessageReadAndReturn(readerId, lastReadMessageId, 1);
-            // 읽은 상태로 db 업데이트 함, 그리고 클라이언트에 전송
+        }else if(type.equals("readMessages")){
+            savedMessage = processAndSaveReadMessages(messageObject);
         }
 
         return savedMessage;
     }
+
+    private String processAndSaveNewMessage(JsonObject messageObject) throws SQLException {
+        int senderId = messageObject.get("senderId").getAsInt();
+        String message = messageObject.get("message").getAsString();
+        int chatRoomId = messageObject.get("chatRoomId").getAsInt();
+
+        return service.saveMessageToDbAndReturn(senderId, message, chatRoomId, 0);
+    }
+
+    private String processAndSaveReadMessages(JsonObject messageObject) throws SQLException {
+        int readerId = messageObject.get("readerId").getAsInt();
+        String datetime = messageObject.get("dateTime").getAsString(); // String 타입으로 받음
+
+        return service.updateMessageReadAndReturn(readerId, datetime, 1);
+    }
+
 
     private void broadcastMessage(String savedMessage) throws IOException {
 

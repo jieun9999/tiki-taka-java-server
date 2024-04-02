@@ -21,7 +21,7 @@ public class ChatService {
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement insertStmt = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement selectStmt = conn.prepareStatement(selectSQL)
-        ){
+        ) {
             // INSERT 실행
             insertStmt.setInt(1, senderId);
             insertStmt.setString(2, message);
@@ -32,12 +32,12 @@ public class ChatService {
             //executeUpdate(): INSERT, UPDATE, DELETE와 같이 데이터베이스의 내용을 변경
             // 영향 받은 행(row)의 수를 정수로 반환
 
-            if(affectedRows > 0){
+            if (affectedRows > 0) {
                 System.out.println("메세지 저장 성공");
 
                 //삽입된 메세지에 대한 추가 정보 조회
-                try(ResultSet rs = selectStmt.executeQuery()){
-                    if(rs.next()){
+                try (ResultSet rs = selectStmt.executeQuery()) {
+                    if (rs.next()) {
                         //ResultSet 객체에서 첫번째 행으로 이동
                         String createdAt = rs.getString("created_at");
                         String content = rs.getString("content");
@@ -51,12 +51,12 @@ public class ChatService {
                         return new Gson().toJson(messageObject);
                     }
 
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
 
-            }else {
+            } else {
                 System.out.println("메세지 저장 실패 : 영향 받은 행 없음");
             }
 
@@ -74,17 +74,17 @@ public class ChatService {
 
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement selectStmt = conn.prepareStatement(selectSQL)
-        ){
+        ) {
             selectStmt.setInt(1, userId);
             // 1번째 파라미터(?)에 userId 값을 설정
-            try(ResultSet rs = selectStmt.executeQuery()){
-                if(rs.next()){
+            try (ResultSet rs = selectStmt.executeQuery()) {
+                if (rs.next()) {
 
                     // 첫 번째 결과의 token 컬럼 값을 반환
                     return rs.getString("token");
                 }
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -95,34 +95,44 @@ public class ChatService {
         return null;
     }
 
-    public String updateMessageReadAndReturn(int readerId, int lastReadMessageId, int isRead){
-        String updateSql = "UPDATE message SET is_read = ? WHERE message_id <= ? AND (sender_id != ? OR sender_id IS NULL)";
-        int updatedRows = 0; // 업데이트된 행의 수를 저장할 변수
+    public String updateMessageReadAndReturn(int readerId, String datetime, int isRead) {
+        // 스크롤한 시점을 기준으로 서버에 저장된 메시지들 중 해당 시간 이전에 생성된 메시지들을 '읽음'으로 처리
+        String updateSql = "UPDATE message SET is_read = ? WHERE message.created_at < ? AND (sender_id != ? OR sender_id IS NULL)";
+        // 업데이트된 행의 수
+        int updatedRows = 0;
 
-        try(Connection conn = DatabaseUtil.getConnection();
-            PreparedStatement updateStmt = conn.prepareStatement(updateSql);
-        ){
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+
             updateStmt.setInt(1, isRead);
-            updateStmt.setInt(2, lastReadMessageId);
+            updateStmt.setString(2, datetime);
             updateStmt.setInt(3, readerId);
-
             updatedRows = updateStmt.executeUpdate();
 
-        }catch (Exception e){
+            //  사용자가 보낸 메시지를 제외하고 읽음 처리된 메시지 중 가장 최신의 message_id를 찾아냄
+            if (updatedRows > 0) {
+                String selectSql = "SELECT MAX(message_id) AS maxMessageId FROM message WHERE sender_id != ? AND is_read = 1";
+                try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+                    selectStmt.setInt(1, readerId);
+                    ResultSet rs = selectStmt.executeQuery();
+
+                    if (rs.next()) {
+                        int lastReadMessageId = rs.getInt("maxMessageId");
+                        System.out.println("maxMessageId" + lastReadMessageId);
+                        JsonObject responseJson = new JsonObject();
+                        responseJson.addProperty("type", "readMessages");
+                        responseJson.addProperty("lastReadMessageId", lastReadMessageId);
+                        return responseJson.toString();
+                    }else {
+                        System.out.println("rs가 안찍힘");
+                    }
+                }
+            }else {
+                System.out.println("no update row");
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-        if (updatedRows > 0) {
-            JsonObject responseJson = new JsonObject();
-            responseJson.addProperty("type", "readMessage");
-            responseJson.addProperty("readerId", readerId);
-            responseJson.addProperty("lastReadMessageId", lastReadMessageId);
-
-            return responseJson.toString();
-
-        } else {
-            return null;
-        }
-
+        return null;
     }
 }
