@@ -2,6 +2,7 @@ package chat;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import firebase.FirebaseCloudMessageService;
 
 import java.io.*;
 import java.net.Socket;
@@ -87,10 +88,13 @@ public class ChatHandler implements Runnable {
 
                 } else if (onlineUsers == 1) {
                     System.out.println("메세지를 FCM 서버로 전달하는 로직을 추가");
-//                    나간 사용자의 fcmToken을 가져옴
-//                    String fcmToken = service.selectFcmToken(userId);
-//                    메세지를 FCM 서버로 전달하는 로직을 추가
-//                    FirebaseCloudMessageService.sendMessage(fcmToken, savedMessage);
+                    String content = messageObject.get("message").getAsString();
+                    int partnerId = messageObject.get("partnerId").getAsInt();
+
+                    // 나간 사용자가 아니라 상대방의 userId로 fcmToken 가져오기
+                    String fcmToken = service.selectFcmToken(partnerId);
+                    // 메세지를 FCM 서버로 전달하는 로직을 추가
+                    FirebaseCloudMessageService.sendMessage(fcmToken, content);
                 }
 
             }else if(type.equals("readMessages")) {

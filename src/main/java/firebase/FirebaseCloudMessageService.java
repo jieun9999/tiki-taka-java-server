@@ -7,6 +7,7 @@ import com.google.firebase.messaging.Notification;
 public class FirebaseCloudMessageService {
 
     public static void sendMessage(String registrationToken, String messageData) throws Exception {
+        // messageData 파싱하기
 
         // 알림 메세지
         // 어플리케이션이 백그라운드나 종료 상태에 있을때, 시스템이 알림을 자동으로 처리한다는 점이 장점!
