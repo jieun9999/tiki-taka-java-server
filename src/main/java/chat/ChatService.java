@@ -16,7 +16,7 @@ public class ChatService {
     public String saveMessageToDbAndReturn(int senderId, String message, int chatRoomId, int isRead) throws SQLException {
 
         String insertSQL = "INSERT INTO message (sender_id, content, room_id, is_read) VALUES (?, ?, ?, ?)";
-        String selectSQL = "SELECT created_at, content FROM message WHERE message_id = LAST_INSERT_ID()";
+        String selectSQL = "SELECT * FROM message WHERE message_id = LAST_INSERT_ID()";
 
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement insertStmt = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
@@ -39,11 +39,15 @@ public class ChatService {
                 try (ResultSet rs = selectStmt.executeQuery()) {
                     if (rs.next()) {
                         //ResultSet 객체에서 첫번째 행으로 이동
+                        int messageId = rs.getInt("message_id");
+                        int roomId = rs.getInt("room_id");
                         String createdAt = rs.getString("created_at");
                         String content = rs.getString("content");
 
                         JsonObject messageObject = new JsonObject();
                         messageObject.addProperty("type", "newMessage");
+                        messageObject.addProperty("messageId", messageId);
+                        messageObject.addProperty("roomId", roomId);
                         messageObject.addProperty("createdAt", createdAt);
                         messageObject.addProperty("content", content);
 

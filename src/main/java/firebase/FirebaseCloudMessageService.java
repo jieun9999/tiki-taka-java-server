@@ -6,8 +6,8 @@ import com.google.firebase.messaging.Notification;
 
 public class FirebaseCloudMessageService {
 
-    public static void sendMessage(String registrationToken, String messageData) throws Exception {
-        // messageData 파싱하기
+    // 알림 메시지와 데이터 페이로드 포함
+    public static void sendMessage(String registrationToken, String messageData, int messageId, int roomId) throws Exception {
 
         // 알림 메세지
         // 어플리케이션이 백그라운드나 종료 상태에 있을때, 시스템이 알림을 자동으로 처리한다는 점이 장점!
@@ -17,6 +17,8 @@ public class FirebaseCloudMessageService {
                         .setTitle("메세지")
                         .setBody(messageData)
                         .build())
+                .putData("message_id", String.valueOf(messageId)) //추가 정보를 데이터 페이로드에 추가
+                .putData("room_id", String.valueOf(roomId))
                 .setToken(registrationToken) // 메서드는 메시지의 수신자를 지정
                 .build(); // 최종 Message 객체를 생성
 

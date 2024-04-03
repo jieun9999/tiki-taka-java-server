@@ -75,6 +75,8 @@ public class ChatHandler implements Runnable {
             JsonObject messageObject = JsonParser.parseString(data).getAsJsonObject();
             String type = messageObject.get("type").getAsString();
             System.out.println("클라이언트에서 받은 data" +data);
+
+            // 파싱후 db에 저장
             String savedMessage = processDataBasedOnType(data);
             System.out.println("savedMessage" + savedMessage);
 
@@ -91,10 +93,15 @@ public class ChatHandler implements Runnable {
                     String content = messageObject.get("message").getAsString();
                     int partnerId = messageObject.get("partnerId").getAsInt();
 
+                    // db에 저장한 결과를 바탕으로 messageId, roomId을 가져옴
+                    JsonObject messageObjectDB = JsonParser.parseString(savedMessage).getAsJsonObject();
+                    int messageId = messageObjectDB.get("messageId").getAsInt();
+                    int roomId = messageObjectDB.get("roomId").getAsInt();
+
                     // 나간 사용자가 아니라 상대방의 userId로 fcmToken 가져오기
                     String fcmToken = service.selectFcmToken(partnerId);
                     // 메세지를 FCM 서버로 전달하는 로직을 추가
-                    FirebaseCloudMessageService.sendMessage(fcmToken, content);
+                    FirebaseCloudMessageService.sendMessage(fcmToken, content, messageId, roomId);
                 }
 
             }else if(type.equals("readMessages")) {
