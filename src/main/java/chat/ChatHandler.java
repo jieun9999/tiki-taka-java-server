@@ -97,11 +97,13 @@ public class ChatHandler implements Runnable {
                     JsonObject messageObjectDB = JsonParser.parseString(savedMessage).getAsJsonObject();
                     int messageId = messageObjectDB.get("messageId").getAsInt();
                     int roomId = messageObjectDB.get("roomId").getAsInt();
+                    String name = messageObjectDB.get("name").getAsString();
+                    String userProfile = messageObjectDB.get("userProfile").getAsString();
 
                     // 나간 사용자가 아니라 상대방의 userId로 fcmToken 가져오기
                     String fcmToken = service.selectFcmToken(partnerId);
                     // 메세지를 FCM 서버로 전달하는 로직을 추가
-                    FirebaseCloudMessageService.sendMessage(fcmToken, content, messageId, roomId);
+                    FirebaseCloudMessageService.sendMessage(fcmToken, content, messageId, roomId, name, userProfile);
                 }
 
             }else if(type.equals("readMessages")) {

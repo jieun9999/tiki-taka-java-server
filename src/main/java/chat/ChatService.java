@@ -16,7 +16,7 @@ public class ChatService {
     public String saveMessageToDbAndReturn(int senderId, String message, int chatRoomId, int isRead) throws SQLException {
 
         String insertSQL = "INSERT INTO message (sender_id, content, room_id, is_read) VALUES (?, ?, ?, ?)";
-        String selectSQL = "SELECT * FROM message WHERE message_id = LAST_INSERT_ID()";
+        String selectSQL = "SELECT m.*, u.profile_image, u.name FROM message AS m LEFT JOIN userProfile AS u ON m.sender_id = u.user_id WHERE message_id = LAST_INSERT_ID()";
 
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement insertStmt = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
@@ -35,12 +35,14 @@ public class ChatService {
             if (affectedRows > 0) {
                 System.out.println("메세지 저장 성공");
 
-                //삽입된 메세지에 대한 추가 정보 조회
+                // 삽입된 메세지에 대한 추가 정보 조회
                 try (ResultSet rs = selectStmt.executeQuery()) {
                     if (rs.next()) {
                         //ResultSet 객체에서 첫번째 행으로 이동
                         int messageId = rs.getInt("message_id");
                         int roomId = rs.getInt("room_id");
+                        String name = rs.getString("name");
+                        String userProfile = rs.getString("profile_image");
                         String createdAt = rs.getString("created_at");
                         String content = rs.getString("content");
 
@@ -48,6 +50,8 @@ public class ChatService {
                         messageObject.addProperty("type", "newMessage");
                         messageObject.addProperty("messageId", messageId);
                         messageObject.addProperty("roomId", roomId);
+                        messageObject.addProperty("name", name);
+                        messageObject.addProperty("userProfile", userProfile);
                         messageObject.addProperty("createdAt", createdAt);
                         messageObject.addProperty("content", content);
 
