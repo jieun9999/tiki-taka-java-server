@@ -50,6 +50,7 @@ public class ChatService {
                         messageObject.addProperty("type", "newMessage");
                         messageObject.addProperty("messageId", messageId);
                         messageObject.addProperty("roomId", roomId);
+                        messageObject.addProperty("senderId", senderId);
                         messageObject.addProperty("name", name);
                         messageObject.addProperty("userProfile", userProfile);
                         messageObject.addProperty("createdAt", createdAt);

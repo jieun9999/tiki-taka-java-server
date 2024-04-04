@@ -74,11 +74,10 @@ public class ChatHandler implements Runnable {
         try {
             JsonObject messageObject = JsonParser.parseString(data).getAsJsonObject();
             String type = messageObject.get("type").getAsString();
-            System.out.println("클라이언트에서 받은 data" +data);
 
             // 파싱후 db에 저장
             String savedMessage = processDataBasedOnType(data);
-            System.out.println("savedMessage" + savedMessage);
+            System.out.println("클라이언트에서 받은 data DB에 저장완료" + savedMessage);
 
             // 메세지 type 2 : newMessage, readMessages
             // 채팅방에 참여자가 2명일 때에는 브로드캐스트, 1명만 있을 경우에는 FCM 전송
@@ -89,7 +88,6 @@ public class ChatHandler implements Runnable {
                     broadcastMessage(savedMessage);
 
                 } else if (onlineUsers == 1) {
-                    System.out.println("메세지를 FCM 서버로 전달하는 로직을 추가");
                     String content = messageObject.get("message").getAsString();
                     int partnerId = messageObject.get("partnerId").getAsInt();
 
