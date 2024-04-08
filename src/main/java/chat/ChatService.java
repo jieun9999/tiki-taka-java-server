@@ -105,8 +105,8 @@ public class ChatService {
     }
 
     public String updateMessageReadAndReturn(int readerId, String datetime, int isRead) {
-        // 스크롤한 시점을 기준으로 서버에 저장된 메시지들 중 해당 시간 이전에 생성된 메시지들을 '읽음'으로 처리
-        String updateSql = "UPDATE message SET is_read = ? WHERE message.created_at < ? AND (sender_id != ? OR sender_id IS NULL)";
+        // 사용자가 메시지를 읽은 시점에서 본 가장 최근 메시지까지 is_read 를 1로 변경함
+        String updateSql = "UPDATE message SET is_read = ? WHERE message.created_at <= ? AND (sender_id != ? OR sender_id IS NULL)";
         // 업데이트된 행의 수
         int updatedRows = 0;
 
